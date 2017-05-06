@@ -10,7 +10,6 @@ namespace AsynchronousExample
 		Editor logEditor;
 		Editor htmlEditor;
 		Entry urlEntry;
-		// ActivityIndicator indicator;
 		string urlEntryText;
 
 		public MainPage()
