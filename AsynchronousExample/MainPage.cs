@@ -11,12 +11,17 @@ namespace AsynchronousExample
 		Editor htmlEditor;
 		Entry urlEntry;
 		string urlEntryText;
+		ActivityIndicator indicator;
+		HttpClient httpClient;
 
 		public MainPage()
 		{
 			Title = "Asynchronous Example";
 
 			string defaultUrl = "http://example.com";
+
+			// Initalise a HttpClient to deal with connecting to the webpage
+			httpClient = new HttpClient();
 
 			// Text entry to get the URL to use
 			urlEntry = new Entry();
@@ -29,29 +34,41 @@ namespace AsynchronousExample
 			urlEntry.TextChanged += (sender, e) => urlEntryText = e.NewTextValue;
 
 			// Button to initiate download
-			Button download = new Button();
-			download.Text = "Download";
+			Button downloadButton = new Button();
+			downloadButton.Text = "Download";
+			downloadButton.HorizontalOptions = LayoutOptions.FillAndExpand;
 
 			// Add event handler to initiate async download when button is clicked
-			download.Clicked += DownloadClicked;
+			downloadButton.Clicked += DownloadClicked;
 
 			// Editor to display log of background processes.
-			logEditor = new Editor { Text = "Initialised.\n" };
+			logEditor = new Editor();
+			logEditor.Text = "Initialised.\n";
 			logEditor.VerticalOptions = LayoutOptions.FillAndExpand;
 
 			// Editor to display downloaded HTML
 			htmlEditor = new Editor();
+			htmlEditor.Text = "HTML will appear here.\n";
 			htmlEditor.VerticalOptions = LayoutOptions.FillAndExpand;
-			htmlEditor.Text = "HTML will appear here.";
 
-			// Add padding around the edges of UI, and add more to the top on iOS to compensate for status bar
+			// Activity indicator to indicate that download is in progress
+			indicator = new ActivityIndicator();
+			indicator.IsRunning = false;
+
+			// Add spacing around the edges of UI, and add more to the top on iOS to compensate for status bar
 			Padding = new Thickness(10, Device.OnPlatform(20, 0, 0), 10, 5);
+
+			StackLayout buttonIndicatorLayout = new StackLayout
+			{
+				Orientation = StackOrientation.Horizontal,
+				Children = { downloadButton, indicator }
+			};
 
 			// Layout the UI components in a vertical list
 			StackLayout layout = new StackLayout
 			{
 				Orientation = StackOrientation.Vertical,
-				Children = { urlEntry, download, htmlEditor, logEditor }
+				Children = { urlEntry, buttonIndicatorLayout, htmlEditor, logEditor }
 			};
 
 			Content = layout;
@@ -60,21 +77,17 @@ namespace AsynchronousExample
 		// Run when the download button is clicked
 		async void DownloadClicked(object sender, EventArgs e)
 		{
-			logEditor.Text += "\nButton Pressed!\n";
+			logEditor.Text += "\nButton Clicked!\n";
 
-			// Run GetLengthHTML asynchronously in the background
-			int lengthResult = await GetLengthHTML(urlEntryText);
+			// Run GetLengthHTML asynchronously in the background, return control to main UI thread until LogHTML returns
+			await LogHTML(urlEntryText);
 
-			// Once GetLengthHTML has completed, print the result to the log
-			logEditor.Text += "Length of returned HTML = " + lengthResult + "\n";
+			logEditor.Text += "Button click handled!\n";
 		}
 
-		// Asynchronously get the length of the HTML for a given URL
-		public async Task<int> GetLengthHTML(string url)
+		// Asynchronously log the length of the HTML for a given URL
+		public async Task LogHTML(string url)
 		{
-			// Create a HttpClient to deal with connecting to the webpage
-			HttpClient httpClient = new HttpClient();
-
 			// Attempt to download the HTML
 			try
 			{
@@ -82,26 +95,30 @@ namespace AsynchronousExample
 				Task<string> contentTask = httpClient.GetStringAsync(url);
 				logEditor.Text += "Starting HTML download...\n";
 
+				// Start activity indicator running to show download is in progress
+				indicator.IsRunning = true;
+
 				// 'await' keyword returns control to calling method, allowing the asynchronous method to run in a different thread
 				string content = await contentTask;
+
+				// Stop activity indicator running to show download is finished
+				indicator.IsRunning = false;
 
 				logEditor.Text += "Finished HTML download...\n";
 
 				// Once the contentTask completes, we can calculate the length of the HTML returned
 				int length = content.Length;
 
-				logEditor.Text += "Got the length.\n";
+				// We can then print the result to the log
+				logEditor.Text += "Length of returned HTML = " + length + "\n";
 
-				// Print the entire HTML to the log
+				// Print the entire HTML to the html editor box
 				htmlEditor.Text = content;
-
-				return length;
 			}
 			// Catch exception if website cannot be reached.
 			catch (HttpRequestException)
 			{
 				logEditor.Text += "URL is invalid or cannot reach website.\n";
-				return 0;
 			}
 		}
 	}
