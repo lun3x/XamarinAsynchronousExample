@@ -33,13 +33,21 @@ namespace AsynchronousExample
 			// Add event handler to update url string when text entry is changed
 			urlEntry.TextChanged += (sender, e) => urlEntryText = e.NewTextValue;
 
-			// Button to initiate download
-			Button downloadButton = new Button();
-			downloadButton.Text = "Download";
-			downloadButton.HorizontalOptions = LayoutOptions.FillAndExpand;
+			// Button to initiate download asynchronously
+			Button asyncDownloadButton = new Button();
+			asyncDownloadButton.Text = "Async Download";
+			asyncDownloadButton.HorizontalOptions = LayoutOptions.FillAndExpand;
 
 			// Add event handler to initiate async download when button is clicked
-			downloadButton.Clicked += DownloadClicked;
+			asyncDownloadButton.Clicked += AsyncDownloadClicked;
+
+			// Button to initiate download asynchronously
+			Button synchDownloadButton = new Button();
+			synchDownloadButton.Text = "Synch Download";
+			synchDownloadButton.HorizontalOptions = LayoutOptions.FillAndExpand;
+
+			// Add event handler to initiate async download when button is clicked
+			synchDownloadButton.Clicked += SynchDownloadClicked;
 
 			// Editor to display log of background processes.
 			logEditor = new Editor();
@@ -61,7 +69,7 @@ namespace AsynchronousExample
 			StackLayout buttonIndicatorLayout = new StackLayout
 			{
 				Orientation = StackOrientation.Horizontal,
-				Children = { downloadButton, indicator }
+				Children = { synchDownloadButton, asyncDownloadButton, indicator }
 			};
 
 			// Layout the UI components in a vertical list
@@ -75,14 +83,55 @@ namespace AsynchronousExample
 		}
 
 		// Run when the download button is clicked
-		async void DownloadClicked(object sender, EventArgs e)
+		void SynchDownloadClicked(object sender, EventArgs e)
 		{
-			logEditor.Text += "\nButton Clicked!\n";
+			logEditor.Text += "\nSynchronous Download Button Clicked!\n";
+
+			// Attempt to download the HTML
+			try
+			{
+				logEditor.Text += "Starting Synchronous HTML download...\n";
+
+				// Stop activity indicator running to show download is in progress
+				indicator.IsRunning = true;
+
+				// Get HTML asynchronously, but block main application thread until it completes
+				string content = httpClient.GetStringAsync(urlEntryText).Result;
+
+				// Stop activity indicator running to show download is finished
+				indicator.IsRunning = false;
+
+				logEditor.Text += "Finished Synchronous HTML download...\n";
+
+				// Once the contentTask completes, we can calculate the length of the HTML returned
+				int length = content.Length;
+
+				// We can then print the result to the log
+				logEditor.Text += "Length of returned HTML = " + length + "\n";
+
+				htmlEditor.Text = content;
+			}
+			// Catch exception if website cannot be reached.
+			catch (HttpRequestException)
+			{
+				// Stop activity indicator running to show download is unsuccessful
+				indicator.IsRunning = false;
+
+				logEditor.Text += "URL is invalid or cannot reach website.\n";
+			}
+
+			logEditor.Text += "Synchronous Download Button click handled!\n";
+		}
+
+		// Run when the download button is clicked
+		async void AsyncDownloadClicked(object sender, EventArgs e)
+		{
+			logEditor.Text += "\nAsynchronous Download Button Clicked!\n";
 
 			// Run GetLengthHTML asynchronously in the background, return control to main UI thread until LogHTML returns
 			await LogHTML(urlEntryText);
 
-			logEditor.Text += "Button click handled!\n";
+			logEditor.Text += "Asynchronous Download Button click handled!\n";
 		}
 
 		// Asynchronously log the length of the HTML for a given URL
@@ -93,7 +142,8 @@ namespace AsynchronousExample
 			{
 				// GetStringAsync is an asynchronous method, so returns an object of type Task<TResult>
 				Task<string> contentTask = httpClient.GetStringAsync(url);
-				logEditor.Text += "Starting HTML download...\n";
+
+				logEditor.Text += "Starting Asynchronous Download HTML download...\n";
 
 				// Start activity indicator running to show download is in progress
 				indicator.IsRunning = true;
@@ -104,7 +154,7 @@ namespace AsynchronousExample
 				// Stop activity indicator running to show download is finished
 				indicator.IsRunning = false;
 
-				logEditor.Text += "Finished HTML download...\n";
+				logEditor.Text += "Finished Asynchronous HTML download...\n";
 
 				// Once the contentTask completes, we can calculate the length of the HTML returned
 				int length = content.Length;
@@ -118,6 +168,9 @@ namespace AsynchronousExample
 			// Catch exception if website cannot be reached.
 			catch (HttpRequestException)
 			{
+				// Stop activity indicator running to show download is unsuccessful
+				indicator.IsRunning = false;
+
 				logEditor.Text += "URL is invalid or cannot reach website.\n";
 			}
 		}
