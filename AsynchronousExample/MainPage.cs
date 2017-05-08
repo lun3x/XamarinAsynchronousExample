@@ -34,20 +34,20 @@ namespace AsynchronousExample
 			urlEntry.TextChanged += (sender, e) => urlEntryText = e.NewTextValue;
 
 			// Button to initiate download asynchronously
-			Button asyncDownloadButton = new Button();
-			asyncDownloadButton.Text = "Async Download";
-			asyncDownloadButton.HorizontalOptions = LayoutOptions.FillAndExpand;
-
-			// Add event handler to initiate async download when button is clicked
-			asyncDownloadButton.Clicked += AsyncDownloadClicked;
-
-			// Button to initiate download asynchronously
 			Button synchDownloadButton = new Button();
 			synchDownloadButton.Text = "Synch Download";
 			synchDownloadButton.HorizontalOptions = LayoutOptions.FillAndExpand;
 
 			// Add event handler to initiate async download when button is clicked
 			synchDownloadButton.Clicked += SynchDownloadClicked;
+
+			// Button to initiate download asynchronously
+			Button asyncDownloadButton = new Button();
+			asyncDownloadButton.Text = "Async Download";
+			asyncDownloadButton.HorizontalOptions = LayoutOptions.FillAndExpand;
+
+			// Add event handler to initiate async download when button is clicked
+			asyncDownloadButton.Clicked += AsyncDownloadClicked;
 
 			// Editor to display log of background processes.
 			logEditor = new Editor();
