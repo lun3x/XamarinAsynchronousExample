@@ -7,3 +7,5 @@ Built using Xamarin.Forms, and the C# System.Net.Http package. To run, clone the
 ```
 $ clone https://github.com/lun3x/XamarinAsynchronousExample.git
 ```
+## Screenshot
+<img src="Screenshot.png" width="256">
